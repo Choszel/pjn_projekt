@@ -14,7 +14,7 @@ class AnswerExtractor:
         question_lower = question.lower()
 
         #  Logika dla kwot i liczb (np. "Ile kosztuje...", "Jaka jest opłata...")
-        money_keywords = ["ile", "koszt", "cena", "opłata", "złotych", "zł"]
+        money_keywords = ["ile", "wynosi", "kwota", "liczba", "wysokość", "koszt", "cena", "opłata", "złotych", "zł"]
         if any(w in question_lower for w in money_keywords):
             for ent in doc_context.ents:
                 if ent.label_ in ("amount", "money", "quantity", "val"):
@@ -25,9 +25,26 @@ class AnswerExtractor:
                 return regex_money.group()
 
         #  Logika dla dat (np. "Kiedy...", "Od którego...")
-        if "kiedy" in question_lower or "data" in question_lower:
+        date_keywords = ["termin", "do", "od", "kiedy", "deadline", "data"]
+        if any(k in q for k in date_keywords):
             for ent in doc_context.ents:
                 if ent.label_ in ("date", "time"):
+                    return ent.text.strip()
+
+        # miejsce
+        place_keywords = ["miejsce", "w", "na", "adres", "lokalizacja"]
+
+        if any(k in q for k in place_keywords):
+            for ent in doc_context.ents:
+                if ent.label_ in ("GPE", "LOC"):
+                    return ent.text.strip()
+
+        #osoby i organizacje
+        person_keywords = ["kto", "osoba", "organ", "organizacja", "instytucja"]
+
+        if any(k in q for k in person_keywords):
+            for ent in doc_context.ents:
+                if ent.label_ in ("PERSON", "ORG"):
                     return ent.text.strip()
 
         return None
