@@ -26,7 +26,7 @@ class AnswerExtractor:
 
         #  Logika dla dat (np. "Kiedy...", "Od którego...")
         date_keywords = ["termin", "do", "od", "kiedy", "deadline", "data"]
-        if any(k in q for k in date_keywords):
+        if any(k in question_lower for k in date_keywords):
             for ent in doc_context.ents:
                 if ent.label_ in ("date", "time"):
                     return ent.text.strip()
@@ -34,7 +34,7 @@ class AnswerExtractor:
         # miejsce
         place_keywords = ["miejsce", "w", "na", "adres", "lokalizacja"]
 
-        if any(k in q for k in place_keywords):
+        if any(k in question_lower for k in place_keywords):
             for ent in doc_context.ents:
                 if ent.label_ in ("GPE", "LOC"):
                     return ent.text.strip()
@@ -42,7 +42,7 @@ class AnswerExtractor:
         #osoby i organizacje
         person_keywords = ["kto", "osoba", "organ", "organizacja", "instytucja"]
 
-        if any(k in q for k in person_keywords):
+        if any(k in question_lower for k in person_keywords):
             for ent in doc_context.ents:
                 if ent.label_ in ("PERSON", "ORG"):
                     return ent.text.strip()
