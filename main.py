@@ -10,16 +10,14 @@ class App:
     def __init__(self, master):
         self.master = master
         self.master.title("System Pytań i Odpowiedzi")
-        with open("retriever.pkl", "rb") as f:
+        with open("retrieverBM25.pkl", "rb") as f:
             self.retriever = pickle.load(f)
 
         with open("extractor.pkl", "rb") as f:
             self.extractor = pickle.load(f)
 
-        self.master.geometry("1000x500")  # Set window size
+        self.master.geometry("1050x525") 
         self.create_widgets()
-
-        # print("\n--- 3. Eksperymenty i Ocena  ---")
 
     def ask_question(self):
         question = self.question_entry.get()
@@ -42,6 +40,16 @@ class App:
         self.answers_text.configure(state = tk.DISABLED)
         self.question_entry.delete(0, tk.END)
 
+    def algoithm_changed(self, selected_algorithm):
+        print(f"Wybrano algorytm: {selected_algorithm}")
+        try:
+            with open("retriever" + selected_algorithm + ".pkl", "rb") as f:
+                self.retriever = pickle.load(f)
+            messagebox.showinfo("showinfo", f"Załadowano model dla algorytmu {selected_algorithm}.") 
+        except FileNotFoundError:
+            messagebox.showwarning("showwarning", f"Model dla algorytmu {selected_algorithm} nie został znaleziony. Proszę przetworzyć dane. Dalej używany jest poprzedni model.")
+
+
     def create_widgets(self):
         self.main_frame = tk.Frame(self.master)
         self.main_frame.pack(fill = tk.BOTH, expand = True)
@@ -50,11 +58,15 @@ class App:
         self.upper_frame.pack(fill = tk.X, padx = 10, pady = 10)
 
         tk.Label(self.upper_frame, text="O co chcesz zapytać?").pack(side = tk.LEFT)
-        self.question_entry = tk.Entry(self.upper_frame, width = 100)
+        self.question_entry = tk.Entry(self.upper_frame, width = 85)
         self.question_entry.pack(side = tk.LEFT, padx = 5)
 
         self.submit_question_button = tk.Button(self.upper_frame, text="Zapytaj", command=self.ask_question)
         self.submit_question_button.pack(side = tk.LEFT, padx = 5)
+
+        algorithms = ["BM25", "SentenceBERT"]  
+        self.chosen_algorithm = tk.StringVar(value="BM25")  
+        self.algorithm_menu = tk.OptionMenu(self.upper_frame, self.chosen_algorithm, *algorithms, command = self.algoithm_changed).pack(side= tk.LEFT, padx = 5) 
 
         self.prepare_data_button = tk.Button(self.upper_frame, text="Przetwórz dane i załaduj model", command=self.prepare_data)
         self.prepare_data_button.pack(side = tk.LEFT, padx = 5)
@@ -90,16 +102,17 @@ class App:
 
                 data.extend(file_data)
 
-            self.retriever = Retriever(data, nlp_model=processor.nlp)
+            self.retriever = Retriever(data, nlp_model=processor.nlp, algorithm=self.chosen_algorithm.get())
             self.extractor = AnswerExtractor(nlp_model=processor.nlp)
 
-            with open("retriever.pkl", "wb") as f:
+            with open("retriever" + self.chosen_algorithm.get() + ".pkl", "wb") as f:
                 pickle.dump(self.retriever, f)
             with open("extractor.pkl", "wb") as f:
                 pickle.dump(self.extractor, f)
 
         except Exception as X:
             messagebox.showerror("showerror", X)
+            return
 
         messagebox.showinfo("showinfo", "Załadowano model i przetworzono dane.") 
 

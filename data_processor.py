@@ -5,7 +5,6 @@ import spacy
 class DataProcessor:
 
     def __init__(self):
-
         try:
             self.nlp = spacy.load("pl_core_news_sm")
         except OSError:

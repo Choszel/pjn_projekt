@@ -1,26 +1,36 @@
 import spacy
 from rank_bm25 import BM25Okapi
+from sentence_transformers import SentenceTransformer
 from typing import List, Tuple, Dict
+from sklearn.metrics.pairwise import cosine_similarity
 
 class Retriever:
-
-    def __init__(self, corpus: List[Dict], nlp_model=None):
-       self.corpus = corpus
-
-       if nlp_model:
+    def __init__(self, corpus: List[Dict], nlp_model=None, algorithm: str = "BM25"):
+        self.corpus = corpus        
+        self.selected_algorithm = algorithm
+        if nlp_model:
             self.nlp = nlp_model
-       else:
+        else:
             try:
                 self.nlp = spacy.load("pl_core_news_sm")
             except OSError:
                 raise ImportError("Model 'pl_core_news_sm' nie jest zainstalowany.")
-
-       self.tokenized_corpus = [
-            doc["lemmatized"].split() for doc in self.corpus
-        ]
-
-       self.bm25 = BM25Okapi(self.tokenized_corpus)
-
+        
+        match algorithm:
+            case "BM25":
+                self.tokenized_corpus = [doc["lemmatized"].split() for doc in self.corpus]
+                self.bm25 = BM25Okapi(self.tokenized_corpus)
+            case "SentenceBERT":
+                self.sentenceBERT = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+                self.documents = [doc["content"] for doc in self.corpus]
+                self.doc_embeddings = self.sentenceBERT.encode(
+                    self.documents,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True
+                )
+            case _:
+                raise ValueError(f"Nieznany algorytm: {algorithm}")
+            
     def preprocess_query(self, query: str) -> List[str]:
 
         doc = self.nlp(query.lower())
@@ -33,12 +43,26 @@ class Retriever:
 
     def retrieve_top_k(self, query: str, k: int = 5) -> List[Tuple[Dict, float]]:
 
-        tokenized_query = self.preprocess_query(query)
+        match self.selected_algorithm:
+            case "BM25":
+                tokenized_query = self.preprocess_query(query)
+                if not tokenized_query:
+                    return []
+                doc_scores = self.bm25.get_scores(tokenized_query)
 
-        if not tokenized_query:
-            return []
+            case "SentenceBERT":
+                query_embedding = self.sentenceBERT.encode(
+                    query,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True
+                )
+                doc_scores = cosine_similarity(
+                    [query_embedding],
+                    self.doc_embeddings
+                )[0]
 
-        doc_scores = self.bm25.get_scores(tokenized_query)
+            case _:
+                raise ValueError(f"Nieznany algorytm: {self.selected_algorithm}")
 
         results = sorted(
             zip(self.corpus, doc_scores),
