@@ -64,7 +64,7 @@ class App:
         self.submit_question_button = tk.Button(self.upper_frame, text="Zapytaj", command=self.ask_question)
         self.submit_question_button.pack(side = tk.LEFT, padx = 5)
 
-        algorithms = ["BM25", "SentenceBERT"]  
+        algorithms = ["BM25", "SentenceBERT", "TFIDF"]  
         self.chosen_algorithm = tk.StringVar(value="BM25")  
         self.algorithm_menu = tk.OptionMenu(self.upper_frame, self.chosen_algorithm, *algorithms, command = self.algoithm_changed).pack(side= tk.LEFT, padx = 5) 
 
