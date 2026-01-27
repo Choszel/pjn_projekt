@@ -3,6 +3,7 @@ from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 from typing import List, Tuple, Dict
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Retriever:
     def __init__(self, corpus: List[Dict], nlp_model=None, algorithm: str = "BM25"):
@@ -27,6 +28,14 @@ class Retriever:
                     self.documents,
                     convert_to_numpy=True,
                     normalize_embeddings=True
+                )
+            case "TFIDF":
+                self.documents = [doc["lemmatized"] for doc in self.corpus]
+
+                self.vectorizer = TfidfVectorizer(
+                    ngram_range=(1, 2),
+                    min_df=2,
+                    max_df=0.9
                 )
             case _:
                 raise ValueError(f"Nieznany algorytm: {algorithm}")
@@ -60,7 +69,17 @@ class Retriever:
                     [query_embedding],
                     self.doc_embeddings
                 )[0]
+                
+            case "TFIDF":
+                processed_query = self.preprocess_query(query)
 
+                query_vector = self.vectorizer.transform([processed_query])
+
+                doc_scores = cosine_similarity(
+                    query_vector,
+                    self.tfidf_matrix
+                )[0]
+                
             case _:
                 raise ValueError(f"Nieznany algorytm: {self.selected_algorithm}")
 
