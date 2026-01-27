@@ -10,13 +10,19 @@ class App:
     def __init__(self, master):
         self.master = master
         self.master.title("System Pytań i Odpowiedzi")
-        with open("retrieverBM25.pkl", "rb") as f:
-            self.retriever = pickle.load(f)
-
-        with open("extractor.pkl", "rb") as f:
-            self.extractor = pickle.load(f)
-
         self.master.geometry("1050x525") 
+        try:
+            with open("retrieverBM25.pkl", "rb") as f:
+                self.retriever = pickle.load(f)
+        except FileNotFoundError:
+            messagebox.showwarning("showwarning", f"Model dla domyślnego algorytmu (BM25) nie został znaleziony. Proszę przetworzyć dane.")
+        
+        try:
+            with open("extractor.pkl", "rb") as f:
+                self.extractor = pickle.load(f)
+        except FileNotFoundError:
+            messagebox.showwarning("showwarning", f"Model ekstraktora nie został znaleziony. Proszę przetworzyć dane.")
+
         self.create_widgets()
 
     def ask_question(self):
