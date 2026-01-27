@@ -37,6 +37,7 @@ class Retriever:
                     min_df=2,
                     max_df=0.9
                 )
+                self.tfidf_matrix = self.vectorizer.fit_transform(self.documents)
             case _:
                 raise ValueError(f"Nieznany algorytm: {algorithm}")
             
@@ -72,6 +73,9 @@ class Retriever:
                 
             case "TFIDF":
                 processed_query = self.preprocess_query(query)
+                if not processed_query:
+                    return []
+                processed_query = " ".join(processed_query)
 
                 query_vector = self.vectorizer.transform([processed_query])
 

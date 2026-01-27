@@ -78,3 +78,6 @@ local_settings.py
 
 # SQLite
 *.sqlite3
+
+# Pickle files
+*.pkl
